@@ -1,19 +1,17 @@
 """Sample Parquet target stream class, which handles writing streams."""
 
-from datetime import datetime
 import csv
 import gzip
 import os
 import shutil
-from typing import List
 import tempfile
+from datetime import datetime
+from typing import List
 
 from singer_sdk.sinks import BatchSink
 
-from target_athena import athena
-from target_athena import s3
-from target_athena import utils
-from target_athena import formats
+from target_athena import athena, formats, s3, utils
+
 
 class AthenaSink(BatchSink):
     """Athena target sink class."""
@@ -74,6 +72,7 @@ class AthenaSink(BatchSink):
 
         filenames = []
         now = datetime.now().strftime("%Y%m%dT%H%M%S")
+        key_stem = self.config.get("s3_key_stem", None) or now
 
         # Serialize records to local files
         for record in records_to_drain:
@@ -87,7 +86,7 @@ class AthenaSink(BatchSink):
                 self.stream_name,
                 object_format,
                 prefix=s3_prefix,
-                timestamp=now,
+                key_stem=key_stem,
                 # naming_convention=self.config.get("naming_convention"),
             )
             if not (filename, target_key) in filenames:
